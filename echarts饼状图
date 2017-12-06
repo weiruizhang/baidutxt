@@ -1,0 +1,89 @@
+let source = ['50%', '50%']
+option = {
+          series: [
+            {
+              type: 'pie',
+              startAngle: 0,
+              endAngle: 360,
+              data: [100],
+              z: 4,
+              radius: ['61%', '60%'],
+              center: source,
+              itemStyle: {
+                normal: {
+                  color: '#cccccc',
+                }
+              },
+              silent: true,
+              labelLine: {
+                normal: {
+                  show: false
+                }
+              }
+            }, {
+              type: 'pie',
+              startAngle: 0,
+              endAngle: 360,
+              data: [100],
+              z: 4,
+              radius: ['40%', '39%'],
+              center: source,
+              itemStyle: {
+                normal: {
+                  color: '#cccccc',
+                }
+              },
+              silent: true,
+              labelLine: {
+                normal: {
+                  show: false
+                }
+              }
+            },
+            {
+              type: 'pie',
+              hoverAnimation: false,
+              startAngle: 0,
+              endAngle: 360,
+              avoidLabelOverlap:false,
+              z: 3,
+              radius: ['40%', '60%'],
+              center: source,
+              color: ['#6695ed', '#ff7f4e', '#87cefa', '#33cd31'],
+              label: {
+                normal: {
+                  show: true,
+                  position: 'center',
+                  formatter: '{d}%',
+                  textStyle: {
+                    fontSize: '30',
+                    fontWeight: 'bold'
+                  }
+                },
+                emphasis: {
+                  show: true,
+                  formatter: function(params) {
+                    var res = params.percent + '%';
+                    return res;
+                  },
+                  textStyle: {
+                    fontSize: '30',
+                    fontWeight: 'bold'
+                  }
+                }
+              },
+              data: [{
+                value: 3661,
+                name: '理财页面'
+              }, {
+                value: 5713,
+                name: '首页'
+              }, {
+                value: 17623,
+                name: '福利'
+              }, {
+                value: 3299,
+                name: '我的'
+              }]
+            }]
+        }
