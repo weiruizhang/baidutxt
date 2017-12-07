@@ -1,0 +1,102 @@
+class MyCharts extends Component {
+    static defaultProps = {};
+    constructor(props){
+        super(props);
+        this.state = {};
+    }
+    setPieOptions() {
+        let source = ['50%', '50%'];
+        let data = [{
+            value: 3661,
+            name: '理财页面'
+        }, {
+            value: 5713,
+            name: '首页'
+        }, {
+            value: 17623,
+            name: '福利'
+        }, {
+            value: 3299,
+            name: '我的'
+        }];
+        let color = ['#6695ed', '#ff7f4e', '#87cefa', '#33cd31'];
+        return {
+            series: [{
+                type: 'pie',
+                hoverAnimation: false,
+                avoidLabelOverlap:false,
+                z: 3,
+                radius: ['70%', '100%'],
+                center: source,
+                color: color,
+                label: {
+                    normal: {
+                        show: false,
+                        position: 'center',
+                    },
+                    emphasis: {
+                        show: true,
+                        formatter: function(params) {
+                            var res = params.percent + '%';
+                            return res;
+                        },
+                        textStyle: {
+                            fontSize: '14',
+                            fontWeight: 'bold'
+                        }
+                    }
+                },
+                data: data
+            }]
+        }
+    }
+    componentWillMount(){};
+    componentDidMount(){
+        let appBox = document.getElementById('App');
+        let myChart = echarts.init(document.getElementById('pieChart'));
+        let option = this.setPieOptions();
+        let PI = 3.14;
+        let prePoint;
+        let pieCircle = 2 * PI * 100;
+        myChart.setOption(option);
+        //通过改变这个角度值来实现旋转
+        appBox.addEventListener('touchstart',(e) => {
+            console.log('起始位置',e.targetTouches[0].pageX);
+            prePoint = e.targetTouches[0].pageX;
+        }, false);
+        appBox.addEventListener('touchmove',(e) => {
+            console.log('正在移动位置',e.targetTouches[0].pageX);
+            let moveDistance = prePoint - e.targetTouches[0].pageX;
+            if(moveDistance >= 0){
+                //往左移动
+                let moveAngle = moveDistance/pieCircle*360; //这个值应该可以知道当前指针指向那一项，看看怎么计算
+                console.log(moveAngle);
+                document.getElementById('pieChart').style.transform = `rotate(${moveAngle}deg)`;
+            }
+        }, false);
+        appBox.addEventListener('touchend',(e) => {
+            console.log('结束移动位置',e.changedTouches[0].pageX);
+        }, false);
+        // document.getElementById('pieChart').style.transform = 'rotate(50deg)';
+    };
+    componentWillUnmount() {
+        let appBox = document.getElementById('App');
+        appBox.removeEventListener('touchstart');
+        appBox.removeEventListener('touchmove');
+        appBox.removeEventListener('touchend');
+    };
+    render() {
+        let pieStyle = {
+            width:"200px",
+            height:"200px",
+            margin:"0 auto",
+        }
+        return (
+            <div className="App" id="App">
+                <div className="pieChart" id="pieChart" style={pieStyle}></div>
+            </div>
+        );
+    }
+}
+
+export default MyCharts;
