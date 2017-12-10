@@ -1,102 +1,161 @@
 class MyCharts extends Component {
-    static defaultProps = {};
+    static defaultProps = {
+        data:[{
+            value: 10,
+            name: '理财页面'
+        }, {
+            value: 20,
+            name: '首页'
+        }, {
+            value: 30,
+            name: '福利'
+        }],
+        color:['#6695ed', '#ff7f4e', '#87cefa', '#f3cd31','#3cd111','#ff000c'],
+        radius: ['65%', '100%'], //radius可以灵活改变,代表圆环宽度
+    };
     constructor(props){
         super(props);
         this.state = {};
     }
+
+    /**
+     * 初始化图表的方法
+     * @returns {{series: [*]}}
+     */
     setPieOptions() {
-        let source = ['50%', '50%'];
-        let data = [{
-            value: 3661,
-            name: '理财页面'
-        }, {
-            value: 5713,
-            name: '首页'
-        }, {
-            value: 17623,
-            name: '福利'
-        }, {
-            value: 3299,
-            name: '我的'
-        }];
-        let color = ['#6695ed', '#ff7f4e', '#87cefa', '#33cd31'];
+        let source = ['50%', '50%']; //source必须固定
         return {
             series: [{
                 type: 'pie',
+                legendHoverLink: false,
                 hoverAnimation: false,
                 avoidLabelOverlap:false,
+                cursor: 'default',
                 z: 3,
-                radius: ['70%', '100%'],
                 center: source,
-                color: color,
+                radius: this.props.radius,
+                color: this.props.color,
+                data: this.props.data,
                 label: {
                     normal: {
                         show: false,
                         position: 'center',
-                    },
-                    emphasis: {
-                        show: true,
-                        formatter: function(params) {
-                            var res = params.percent + '%';
-                            return res;
-                        },
-                        textStyle: {
-                            fontSize: '14',
-                            fontWeight: 'bold'
-                        }
                     }
-                },
-                data: data
+                }
             }]
         }
     }
-    componentWillMount(){};
+
+    /**
+     * 计算改变的角度值的方法
+     * @param startPoint 第一个参数,形式为{x,y},表示起始坐标
+     * @param endPoint 第二个参数,形式为{x,y},表示结束坐标
+     * @returns {number|*} 返回改变的角度数
+     */
+    getChangeAngle(startPoint,endPoint) {
+        let startAngle,moveAngle,endAngle,sx,sy,ex,ey;
+        let appBox = document.getElementById('App'); //此处的盒子根据实际情况id名可能会变化
+        let appWidth = appBox.clientWidth; //容纳表单的盒子宽度，除以2则算出偏差值
+        let appHeight = appBox.clientHeight; //容纳表单的盒子高度
+        /*//做这个方法时出现的问题
+        //下面这种做法会改变外部对象的值，所以数值全乱了，可以研究一下对象的特性
+        startAngle.x = startAngle.x - appWidth/2;
+        startAngle.y = -(startAngle.y - appHeight/2);
+        moveAngle.x = moveAngle.x - appWidth/2;
+        moveAngle.y = -(moveAngle.y - appHeight/2);*/
+        sx = startPoint.x - appWidth/2;
+        sy = appHeight/2 - startPoint.y;
+        ex = endPoint.x - appWidth/2;
+        ey = appHeight/2 - endPoint.y;
+
+        startAngle = 180/Math.PI*Math.atan2(sy,sx);
+        endAngle = 180/Math.PI*Math.atan2(ey,ex);
+        moveAngle = startAngle - endAngle;
+        return moveAngle;
+    }
+
+    /**
+     * 用来判断当前指针指向的是哪一部分,并且算出当前指向部分占总数的百分比的方法
+     * @param data 传入的数据模型数组[{value1,name1},{value2,name3},...]
+     * @param nowVal 当前指针指向的角度值,经过上一步计算得来,用来作比较，判断当前所属种类
+     */
+    getValueRange(data,nowVal){
+        let all = 0; //图表所有项总值初始化
+        for (var i=0;i<data.length;i++){all = all + data[i].value};
+        data.reduce((pre,next)=>{
+            let last;
+            last = pre + next.value;
+            if((pre/all*360) < nowVal && nowVal <= (last/all*360)) {
+                //下面这个值很重要，别丢了
+                console.log('进来,把当前部分所占百分比显示在页面:',`${(next.value/all)*100}%`,next.name);
+            }
+            return last;
+        },0);
+    }
     componentDidMount(){
+        let startPoint,nowPoint,changeAngle, initAngle = 0,prePoint;
         let appBox = document.getElementById('App');
         let myChart = echarts.init(document.getElementById('pieChart'));
-        let option = this.setPieOptions();
-        let PI = 3.14;
-        let prePoint;
-        let pieCircle = 2 * PI * 100;
+        let option = this.setPieOptions.call(this);
+
         myChart.setOption(option);
-        //通过改变这个角度值来实现旋转
+        /**
+         * 开始触摸的事件
+         */
         appBox.addEventListener('touchstart',(e) => {
-            console.log('起始位置',e.targetTouches[0].pageX);
-            prePoint = e.targetTouches[0].pageX;
+            startPoint = {x: e.targetTouches[0].pageX,y: e.targetTouches[0].pageY};
         }, false);
+        /**
+         * 正在触摸的事件
+         */
         appBox.addEventListener('touchmove',(e) => {
-            console.log('正在移动位置',e.targetTouches[0].pageX);
-            let moveDistance = prePoint - e.targetTouches[0].pageX;
-            if(moveDistance >= 0){
-                //往左移动
-                let moveAngle = moveDistance/pieCircle*360; //这个值应该可以知道当前指针指向那一项，看看怎么计算
-                console.log(moveAngle);
-                document.getElementById('pieChart').style.transform = `rotate(${moveAngle}deg)`;
+            let nowAngle;
+            //阻止滚动
+            e.preventDefault();
+            //首次进入
+            if(prePoint === undefined){prePoint = startPoint;}
+            nowPoint = {x: e.targetTouches[0].pageX, y: e.targetTouches[0].pageY};
+            changeAngle = this.getChangeAngle(prePoint,nowPoint);
+            prePoint = nowPoint;
+            initAngle = initAngle + changeAngle;
+            document.getElementById('pieChart').style.transform = `rotate(${initAngle}deg)`;
+
+            if(initAngle < 0){
+                nowAngle = - (initAngle%360);
+            }else {
+                nowAngle = 360 - initAngle%360;
             }
+            this.getValueRange(this.props.data,nowAngle);
+
         }, false);
+
         appBox.addEventListener('touchend',(e) => {
-            console.log('结束移动位置',e.changedTouches[0].pageX);
+            //重置prePoint值,不重置的情况下,第二次之后的触摸起始位置值会沿用上次触摸结束的位置
+            prePoint = undefined;
         }, false);
-        // document.getElementById('pieChart').style.transform = 'rotate(50deg)';
-    };
-    componentWillUnmount() {
-        let appBox = document.getElementById('App');
-        appBox.removeEventListener('touchstart');
-        appBox.removeEventListener('touchmove');
-        appBox.removeEventListener('touchend');
     };
     render() {
+        //由于获取触摸点的局限性(原始坐标(0,0)固定在页面左上角,图表中心点必须通过原始坐标点计算得出),包含图表的盒子左上角必须和页面左上角对齐
+        //这个局限性后期待解决,寻求更好的计算方案,可以把盒子离页面左上角的距离也算上去,否则图表要想居中,则width须为100%
+        let appStyle = {
+            //外部传进来
+            width: "100%",
+            height: "500px",
+            margin: "0 auto",
+            background: "#ccc"
+        };
+        //此处宽高值还需要研究,用百分比就能继承上层盒子的值
         let pieStyle = {
-            width:"200px",
-            height:"200px",
+            width:"50%",
+            height:"100%",
             margin:"0 auto",
-        }
+            transform: "rotate(0deg)"
+        };
         return (
-            <div className="App" id="App">
+            <div className="App" id="App" style={appStyle}>
                 <div className="pieChart" id="pieChart" style={pieStyle}></div>
             </div>
         );
     }
 }
-
 export default MyCharts;
