@@ -1,3 +1,12 @@
+/**
+ * Created by Admin on 2017/12/6.
+ */
+import React, { Component } from 'react';
+import './App.css';
+import echarts from 'echarts';
+require('echarts/lib/component/tooltip');
+require('echarts/lib/component/title');
+
 class MyCharts extends Component {
     static defaultProps = {
         data:[{
@@ -57,16 +66,18 @@ class MyCharts extends Component {
         let appBox = document.getElementById('App'); //此处的盒子根据实际情况id名可能会变化
         let appWidth = appBox.clientWidth; //容纳表单的盒子宽度，除以2则算出偏差值
         let appHeight = appBox.clientHeight; //容纳表单的盒子高度
+        let appLeft = appBox.offsetLeft; //容纳表单的盒子距离页面左边缘的横向距离
+        let appTop = appBox.offsetTop; //容纳表单的盒子距离页面左边缘的纵向距离
         /*//做这个方法时出现的问题
         //下面这种做法会改变外部对象的值，所以数值全乱了，可以研究一下对象的特性
         startAngle.x = startAngle.x - appWidth/2;
         startAngle.y = -(startAngle.y - appHeight/2);
         moveAngle.x = moveAngle.x - appWidth/2;
         moveAngle.y = -(moveAngle.y - appHeight/2);*/
-        sx = startPoint.x - appWidth/2;
-        sy = appHeight/2 - startPoint.y;
-        ex = endPoint.x - appWidth/2;
-        ey = appHeight/2 - endPoint.y;
+        sx = startPoint.x - appWidth/2 - appLeft;
+        sy = appTop + appHeight/2 - startPoint.y;
+        ex = endPoint.x - appWidth/2 - appLeft;
+        ey = appTop + appHeight/2 - endPoint.y;
 
         startAngle = 180/Math.PI*Math.atan2(sy,sx);
         endAngle = 180/Math.PI*Math.atan2(ey,ex);
@@ -137,16 +148,17 @@ class MyCharts extends Component {
     render() {
         //由于获取触摸点的局限性(原始坐标(0,0)固定在页面左上角,图表中心点必须通过原始坐标点计算得出),包含图表的盒子左上角必须和页面左上角对齐
         //这个局限性后期待解决,寻求更好的计算方案,可以把盒子离页面左上角的距离也算上去,否则图表要想居中,则width须为100%
+        //加了offLeft进行偏差计算就OK了
         let appStyle = {
             //外部传进来
-            width: "100%",
-            height: "500px",
+            width: "80%",
+            height: "100px",
             margin: "0 auto",
             background: "#ccc"
         };
         //此处宽高值还需要研究,用百分比就能继承上层盒子的值
         let pieStyle = {
-            width:"50%",
+            width:"100%",
             height:"100%",
             margin:"0 auto",
             transform: "rotate(0deg)"
